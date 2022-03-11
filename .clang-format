@@ -1,0 +1,27 @@
+AlignAfterOpenBracket: AlwaysBreak
+AllowShortFunctionsOnASingleLine: Empty
+AlwaysBreakTemplateDeclarations: Yes
+BasedOnStyle: WebKit
+BinPackArguments: false
+BinPackParameters: false
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: true
+  AfterFunction: true
+  AfterStruct: true
+  AfterNamespace: false
+  BeforeCatch: true
+  BeforeElse: true
+BreakBeforeBinaryOperators: None
+BreakBeforeBraces: Custom
+BreakConstructorInitializersBeforeComma: true
+ColumnLimit: 160
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 2
+NamespaceIndentation: None
+SortIncludes: false
+SpaceBeforeParens: ControlStatements
+Standard: Cpp11
+Cpp11BracedListStyle: true
+SpaceBeforeCpp11BracedList: false
+IndentPPDirectives: BeforeHash
