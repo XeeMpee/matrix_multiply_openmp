@@ -1,1 +1,2 @@
-add_subdirectory(matplotlib-cpp)
+add_subdirectory(matplotlibcpp)
+add_subdirectory(spdlog)

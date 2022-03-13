@@ -1,5 +1,6 @@
 #include <random>
 #include <stdexcept>
+#include <functional>
 #include <omp.h>
 
 #include "matrix_operations.hpp"
@@ -97,64 +98,85 @@ Matrix2D fromArray(double** array)
 }
 
 
-Matrix2D multiply2DMatrixSerial(const Matrix2D& matrixA, const Matrix2D& matrixB)
+Matrix2DMultiplicationOutput multiply2DMatrix(
+    const Matrix2D& matrixA,
+    const Matrix2D& matrixB,
+    std::function<void(const Matrix2D& matrixA, const Matrix2D& matrixB, Matrix2DArray& matrix, uint32_t aRows, uint32_t aCols, uint32_t bCols)> multiplication)
 {
     if (!isMatrix2DMultiplable(matrixA, matrixB))
     {
         throw std::runtime_error("Multiply matrix failed!");
     }
 
-    uint32_t matrixARows = matrixA.size();
-    uint32_t matrixACols = matrixA.front().size();
-    uint32_t matrixBRows = matrixB.size();
-    uint32_t matrixBCols = matrixB.front().size();
+    uint32_t aRows = matrixA.size();
+    uint32_t aCols = matrixA.front().size();
+    uint32_t bCols = matrixB.front().size();
 
-    Matrix2DArray matrix{matrixARows, matrixBCols};
+    Duration duration;
+    Matrix2DArray matrix{aRows, bCols};
 
     uint32_t rowIndex{0};
     uint32_t columnIndex{0};
-    for (rowIndex; rowIndex < matrixARows; rowIndex++)
-    {
-        uint32_t value{0};
-        for (columnIndex; columnIndex < matrixBCols; columnIndex++)
-        {
-            value += matrixA[rowIndex][columnIndex] * matrixB[columnIndex][rowIndex];
-        }
-        matrix.get()[rowIndex][columnIndex] = value;
-        value = 0;
-    }
 
-    return fromArray(matrix.get());
+    duration = omp_get_wtime();
+    multiplication(matrixA, matrixB, matrix, aRows, aCols, bCols);
+    duration = omp_get_wtime() - duration;
+
+    return std::make_tuple(fromArray(matrix.get()), duration);
 }
 
-Matrix2D multiply2DMatrixParallel(const Matrix2D& matrixA, const Matrix2D& matrixB)
+Matrix2DMultiplicationOutput multiply2DMatrixSerial(const Matrix2D& matrixA, const Matrix2D& matrixB)
 {
-    if (!isMatrix2DMultiplable(matrixA, matrixB))
-    {
-        throw std::runtime_error("Multiply matrix failed!");
-    }
+    return multiply2DMatrix(
+        matrixA, matrixB, [](const Matrix2D& matrixA, const Matrix2D& matrixB, Matrix2DArray& matrix, uint32_t aRows, uint32_t aCols, uint32_t bCols) {
+            for (int row = 0; row < aRows; row++)
+            {
+                for (int col = 0; col < bCols; col++)
+                {
+                    for (int inner = 0; inner < aCols; inner++)
+                    {
+                        matrix.get()[row][col] += matrixA[row][inner] * matrixB[inner][col];
+                    }
+                }
+            }
+        });
+}
 
-    uint32_t matrixARows = matrixA.size();
-    uint32_t matrixACols = matrixA.front().size();
-    uint32_t matrixBRows = matrixB.size();
-    uint32_t matrixBCols = matrixB.front().size();
 
-    Matrix2DArray matrix{matrixARows, matrixBCols};
+Matrix2DMultiplicationOutput multiply2DMatrixParallelInnerLoop(const Matrix2D& matrixA, const Matrix2D& matrixB)
+{
+    return multiply2DMatrix(
+        matrixA, matrixB, [](const Matrix2D& matrixA, const Matrix2D& matrixB, Matrix2DArray& matrix, uint32_t aRows, uint32_t aCols, uint32_t bCols) {
+            for (int row = 0; row < aRows; row++)
+            {
+#pragma omp parallel for firstprivate(row)
+                for (int col = 0; col < bCols; col++)
+                {
+                    for (int inner = 0; inner < aCols; inner++)
+                    {
+                        matrix.get()[row][col] += matrixA[row][inner] * matrixB[inner][col];
+                    }
+                }
+            }
+        });
+}
 
-    uint32_t rowIndex{0};
-    uint32_t columnIndex{0};
-    for (rowIndex; rowIndex < matrixARows; rowIndex++)
-    {
-        uint32_t value{0};
-        for (columnIndex; columnIndex < matrixBCols; columnIndex++)
-        {
-            value += matrixA[rowIndex][columnIndex] * matrixB[columnIndex][rowIndex];
-        }
-        matrix.get()[rowIndex][columnIndex] = value;
-        value = 0;
-    }
-
-    return fromArray(matrix.get());
+Matrix2DMultiplicationOutput multiply2DMatrixParallelOuterLoop(const Matrix2D& matrixA, const Matrix2D& matrixB)
+{
+    return multiply2DMatrix(
+        matrixA, matrixB, [](const Matrix2D& matrixA, const Matrix2D& matrixB, Matrix2DArray& matrix, uint32_t aRows, uint32_t aCols, uint32_t bCols) {
+#pragma omp parallel for
+            for (int row = 0; row < aRows; row++)
+            {
+                for (int col = 0; col < bCols; col++)
+                {
+                    for (int inner = 0; inner < aCols; inner++)
+                    {
+                        matrix.get()[row][col] += matrixA[row][inner] * matrixB[inner][col];
+                    }
+                }
+            }
+        });
 }
 
 } // namespace name
