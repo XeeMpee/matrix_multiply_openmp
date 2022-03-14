@@ -1,7 +1,7 @@
 #include <omp.h>
 #include <random>
 #include <stdexcept>
-	
+
 
 #include "matrix/matrix_multiplication_output.hpp"
 
@@ -12,7 +12,13 @@ MatrixArray::MatrixArray(uint32_t rows, uint32_t cols)
 {
     matrix_ = new double*[rows];
     for (uint32_t row = 0; row < rows; row++)
+    {
         matrix_[row] = new double[cols];
+        for (uint32_t col = 0; col < cols; col++)
+        {
+            matrix_[row][col] = 0;
+        }
+    }
 }
 
 MatrixArray::~MatrixArray()
@@ -73,7 +79,7 @@ MatrixMultiplicationOutput Matrix::multiplyMatrixParallelInnerLoop(const Matrix&
         matrixA, matrixB, [](const Matrix& matrixA, const Matrix& matrixB, MatrixArray& matrix, uint32_t aRows, uint32_t aCols, uint32_t bCols) {
             for (int row = 0; row < aRows; row++)
             {
-#pragma omp parallel for firstprivate(row)
+#pragma omp parallel for firstprivate(row) shared(matrixA, matrixB, aRows)
                 for (int col = 0; col < bCols; col++)
                 {
                     for (int inner = 0; inner < aCols; inner++)
@@ -108,7 +114,7 @@ MatrixMultiplicationOutput Matrix::multiplyMatrix(
     const Matrix& matrixA,
     const Matrix& matrixB,
     std::function<void(const Matrix& matrixA, const Matrix& matrixB, MatrixArray& matrix, uint32_t aRows, uint32_t aCols, uint32_t bCols)> multiplication)
-{   
+{
     if (!const_cast<Matrix&>(matrixA).isMultiplable(matrixB))
     {
         throw std::runtime_error("Multiply matrix failed!");
@@ -128,14 +134,12 @@ MatrixMultiplicationOutput Matrix::multiplyMatrix(
     multiplication(matrixA, matrixB, matrix, aRows, aCols, bCols);
     duration = omp_get_wtime() - duration;
 
-    return MatrixMultiplicationOutput(std::move(fromArray(matrix.get())), duration);
+    return MatrixMultiplicationOutput(fromArray(matrix.get(), aRows, bCols), duration);
 }
 
 
-Matrix Matrix::fromArray(double** array)
+Matrix Matrix::fromArray(double** array, uint32_t rows, uint32_t cols)
 {
-    uint32_t rows = sizeof(array) / sizeof(array[0]);
-    uint32_t cols = sizeof(array[0]) / sizeof(array[0][0]);
     Matrix matrix{};
     for (uint32_t row = 0; row < rows; row++)
     {

@@ -16,6 +16,7 @@ int main()
     MatrixMultiplicationOutput serialOutputMatrixSmall = Matrix::multiplyMatrixSerial(matrixASmall, matrixBSmall);
     MatrixMultiplicationOutput innerLoopParallelInnerMatrixSmall = Matrix::multiplyMatrixParallelInnerLoop(matrixASmall, matrixBSmall);
     MatrixMultiplicationOutput outerLoopParallelOutputMatrixSmall = Matrix::multiplyMatrixParallelOuterLoop(matrixASmall, matrixBSmall);
+    MatrixMultiplicationOutput::equal("small", {serialOutputMatrixSmall, innerLoopParallelInnerMatrixSmall, outerLoopParallelOutputMatrixSmall});
 
     Matrix matrixMediumA = Matrix::generate(100, 100, 0.0, 100.0);
     Matrix matrixMediumB = Matrix::generate(100, 100, 200.0, 250.0);
@@ -24,6 +25,7 @@ int main()
     MatrixMultiplicationOutput serialOutputMatrixMedium = Matrix::multiplyMatrixSerial(matrixMediumA, matrixMediumB);
     MatrixMultiplicationOutput innerLoopParallelInnerMatrixMedium = Matrix::multiplyMatrixParallelInnerLoop(matrixMediumA, matrixMediumB);
     MatrixMultiplicationOutput outerLoopParallelOutputMatrixMedium = Matrix::multiplyMatrixParallelOuterLoop(matrixMediumA, matrixMediumB);
+    MatrixMultiplicationOutput::equal("medium", {serialOutputMatrixMedium, innerLoopParallelInnerMatrixMedium, outerLoopParallelOutputMatrixMedium});
 
     Matrix matrixLargeA = Matrix::generate(500, 500, 0.0, 100.0);
     Matrix matrixLargeB = Matrix::generate(500, 500, 200.0, 250.0);
@@ -32,6 +34,7 @@ int main()
     MatrixMultiplicationOutput serialOutputMatrixLarge = Matrix::multiplyMatrixSerial(matrixLargeA, matrixLargeB);
     MatrixMultiplicationOutput innerLoopParallelInnerMatrixLarge = Matrix::multiplyMatrixParallelInnerLoop(matrixLargeA, matrixLargeB);
     MatrixMultiplicationOutput outerLoopParallelOutputMatrixLarge = Matrix::multiplyMatrixParallelOuterLoop(matrixLargeA, matrixLargeB);
+    MatrixMultiplicationOutput::equal("large", {serialOutputMatrixLarge, innerLoopParallelInnerMatrixLarge, outerLoopParallelOutputMatrixLarge});
 
     plt::figure(1);
     std::vector<double> indx = {0, 1, 2, 3, 4, 5, 6, 7, 8};

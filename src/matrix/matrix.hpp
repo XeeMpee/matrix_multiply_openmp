@@ -28,7 +28,7 @@ public:
 
 
 private:
-    static Matrix fromArray(double** array);
+    static Matrix fromArray(double** array, uint32_t rows, uint32_t cols);
 
     static MatrixMultiplicationOutput multiplyMatrix(
         const Matrix& matrixA,
