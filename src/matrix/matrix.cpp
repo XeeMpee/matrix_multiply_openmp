@@ -2,38 +2,7 @@
 #include <random>
 #include <stdexcept>
 
-
 #include "matrix/matrix_multiplication_output.hpp"
-
-
-MatrixArray::MatrixArray(uint32_t rows, uint32_t cols)
-    : rows_{rows}
-    , cols_{cols}
-{
-    matrix_ = new double*[rows];
-    for (uint32_t row = 0; row < rows; row++)
-    {
-        matrix_[row] = new double[cols];
-        for (uint32_t col = 0; col < cols; col++)
-        {
-            matrix_[row][col] = 0;
-        }
-    }
-}
-
-MatrixArray::~MatrixArray()
-{
-    for (uint32_t row = 0; row < rows_; row++)
-    {
-        delete[] matrix_[row];
-    }
-    delete[] matrix_;
-}
-
-double** MatrixArray::get()
-{
-    return matrix_;
-}
 
 
 Matrix Matrix::generate(uint32_t rows, uint32_t cols, double min, double max)
@@ -56,64 +25,8 @@ Matrix Matrix::generate(uint32_t rows, uint32_t cols, double min, double max)
     return matrix;
 }
 
-MatrixMultiplicationOutput Matrix::multiplyMatrixSerial(const Matrix& matrixA, const Matrix& matrixB)
-{
-    return multiplyMatrix(
-        matrixA, matrixB, [](const Matrix& matrixA, const Matrix& matrixB, MatrixArray& matrix, uint32_t aRows, uint32_t aCols, uint32_t bCols) {
-            for (int row = 0; row < aRows; row++)
-            {
-                for (int col = 0; col < bCols; col++)
-                {
-                    for (int inner = 0; inner < aCols; inner++)
-                    {
-                        matrix.get()[row][col] += matrixA[row][inner] * matrixB[inner][col];
-                    }
-                }
-            }
-        });
-}
 
-MatrixMultiplicationOutput Matrix::multiplyMatrixParallelInnerLoop(const Matrix& matrixA, const Matrix& matrixB)
-{
-    return multiplyMatrix(
-        matrixA, matrixB, [](const Matrix& matrixA, const Matrix& matrixB, MatrixArray& matrix, uint32_t aRows, uint32_t aCols, uint32_t bCols) {
-            for (int row = 0; row < aRows; row++)
-            {
-#pragma omp parallel for firstprivate(row) shared(matrixA, matrixB, aRows)
-                for (int col = 0; col < bCols; col++)
-                {
-                    for (int inner = 0; inner < aCols; inner++)
-                    {
-                        matrix.get()[row][col] += matrixA[row][inner] * matrixB[inner][col];
-                    }
-                }
-            }
-        });
-}
-
-MatrixMultiplicationOutput Matrix::multiplyMatrixParallelOuterLoop(const Matrix& matrixA, const Matrix& matrixB)
-{
-    return multiplyMatrix(
-        matrixA, matrixB, [](const Matrix& matrixA, const Matrix& matrixB, MatrixArray& matrix, uint32_t aRows, uint32_t aCols, uint32_t bCols) {
-#pragma omp parallel for
-            for (int row = 0; row < aRows; row++)
-            {
-                for (int col = 0; col < bCols; col++)
-                {
-                    for (int inner = 0; inner < aCols; inner++)
-                    {
-                        matrix.get()[row][col] += matrixA[row][inner] * matrixB[inner][col];
-                    }
-                }
-            }
-        });
-}
-
-
-MatrixMultiplicationOutput Matrix::multiplyMatrix(
-    const Matrix& matrixA,
-    const Matrix& matrixB,
-    std::function<void(const Matrix& matrixA, const Matrix& matrixB, MatrixArray& matrix, uint32_t aRows, uint32_t aCols, uint32_t bCols)> multiplication)
+MatrixMultiplicationOutput Matrix::multiply(IMatrixMultiplications&& multiplication, const Matrix& matrixA, const Matrix& matrixB)
 {
     if (!const_cast<Matrix&>(matrixA).isMultiplable(matrixB))
     {

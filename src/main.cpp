@@ -3,6 +3,7 @@
 
 #include "matrix/matrix.hpp"
 #include "matrix/matrix_multiplication_output.hpp"
+#include "matrix/matrix_multiplications.hpp"
 #include "utils/matplotlibcpp_helpers.hpp"
 
 namespace plt = matplotlibcpp;
@@ -13,31 +14,32 @@ int main()
     Matrix matrixBSmall = Matrix::generate(10, 10, 200.0, 250.0);
 
     spdlog::info("small matrixes multiplications (operation may take a while)");
-    MatrixMultiplicationOutput serialOutputMatrixSmall = Matrix::multiplyMatrixSerial(matrixASmall, matrixBSmall);
-    MatrixMultiplicationOutput innerLoopParallelInnerMatrixSmall = Matrix::multiplyMatrixParallelInnerLoop(matrixASmall, matrixBSmall);
-    MatrixMultiplicationOutput outerLoopParallelOutputMatrixSmall = Matrix::multiplyMatrixParallelOuterLoop(matrixASmall, matrixBSmall);
+    MatrixMultiplicationOutput serialOutputMatrixSmall = Matrix::multiply(SerialMatrixMultiplications{}, matrixASmall, matrixBSmall);
+    MatrixMultiplicationOutput innerLoopParallelInnerMatrixSmall = Matrix::multiply(ParallelInnerLoopMatrixMultiplications{}, matrixASmall, matrixBSmall);
+    MatrixMultiplicationOutput outerLoopParallelOutputMatrixSmall = Matrix::multiply(ParallelOuterLoopMatrixMultiplications{}, matrixASmall, matrixBSmall);
     MatrixMultiplicationOutput::equal("small", {serialOutputMatrixSmall, innerLoopParallelInnerMatrixSmall, outerLoopParallelOutputMatrixSmall});
+
 
     Matrix matrixMediumA = Matrix::generate(100, 100, 0.0, 100.0);
     Matrix matrixMediumB = Matrix::generate(100, 100, 200.0, 250.0);
 
     spdlog::info("medium matrixes multiplications (operation may take a while)");
-    MatrixMultiplicationOutput serialOutputMatrixMedium = Matrix::multiplyMatrixSerial(matrixMediumA, matrixMediumB);
-    MatrixMultiplicationOutput innerLoopParallelInnerMatrixMedium = Matrix::multiplyMatrixParallelInnerLoop(matrixMediumA, matrixMediumB);
-    MatrixMultiplicationOutput outerLoopParallelOutputMatrixMedium = Matrix::multiplyMatrixParallelOuterLoop(matrixMediumA, matrixMediumB);
+    MatrixMultiplicationOutput serialOutputMatrixMedium = Matrix::multiply(SerialMatrixMultiplications{}, matrixMediumA, matrixMediumB);
+    MatrixMultiplicationOutput innerLoopParallelInnerMatrixMedium = Matrix::multiply(ParallelInnerLoopMatrixMultiplications{}, matrixMediumA, matrixMediumB);
+    MatrixMultiplicationOutput outerLoopParallelOutputMatrixMedium = Matrix::multiply(ParallelOuterLoopMatrixMultiplications{}, matrixMediumA, matrixMediumB);
     MatrixMultiplicationOutput::equal("medium", {serialOutputMatrixMedium, innerLoopParallelInnerMatrixMedium, outerLoopParallelOutputMatrixMedium});
+
 
     Matrix matrixLargeA = Matrix::generate(500, 500, 0.0, 100.0);
     Matrix matrixLargeB = Matrix::generate(500, 500, 200.0, 250.0);
 
     spdlog::info("large matrixes multiplications (operation may take a while)");
-    MatrixMultiplicationOutput serialOutputMatrixLarge = Matrix::multiplyMatrixSerial(matrixLargeA, matrixLargeB);
-    MatrixMultiplicationOutput innerLoopParallelInnerMatrixLarge = Matrix::multiplyMatrixParallelInnerLoop(matrixLargeA, matrixLargeB);
-    MatrixMultiplicationOutput outerLoopParallelOutputMatrixLarge = Matrix::multiplyMatrixParallelOuterLoop(matrixLargeA, matrixLargeB);
+    MatrixMultiplicationOutput serialOutputMatrixLarge = Matrix::multiply(SerialMatrixMultiplications{}, matrixLargeA, matrixLargeB);
+    MatrixMultiplicationOutput innerLoopParallelInnerMatrixLarge = Matrix::multiply(ParallelInnerLoopMatrixMultiplications{}, matrixLargeA, matrixLargeB);
+    MatrixMultiplicationOutput outerLoopParallelOutputMatrixLarge = Matrix::multiply(ParallelOuterLoopMatrixMultiplications{}, matrixLargeA, matrixLargeB);
     MatrixMultiplicationOutput::equal("large", {serialOutputMatrixLarge, innerLoopParallelInnerMatrixLarge, outerLoopParallelOutputMatrixLarge});
 
     plt::figure(1);
-    std::vector<double> indx = {0, 1, 2, 3, 4, 5, 6, 7, 8};
     std::vector<double> data = {
         serialOutputMatrixSmall.duration,
         innerLoopParallelInnerMatrixSmall.duration,
@@ -58,6 +60,7 @@ int main()
         fmt::format("serial\n large\n {}s", std::to_string(serialOutputMatrixLarge.duration)),
         fmt::format("parallel\n inner loop\n large\n {}s", std::to_string(innerLoopParallelInnerMatrixLarge.duration)),
         fmt::format("parallel\n outer loop\n large\n {}s", std::to_string(outerLoopParallelOutputMatrixLarge.duration))};
+    std::vector<int> indx = plthelpers::indxs(data);
     plt::xticks(indx, tags);
     plt::yticks(data, plthelpers::ylabels(data));
     plt::bar(data);
